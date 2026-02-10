@@ -1,6 +1,5 @@
-# Single Domain Generalization for Crowd Counting
-
-This is an official repository for our CVPR2024 work, "Single Domain Generalization for Crowd Counting". You can read our paper [here](https://arxiv.org/pdf/2403.09124.pdf).
+# WQCount
+This is an official repository for our work, "WQCount"
 
 ## Requirements
 * Python 3.10.12
@@ -23,12 +22,6 @@ This is an official repository for our CVPR2024 work, "Single Domain Generalizat
     python dmap_gen.py --path data/qnrf
     ```
 
-## Training
-Run the following command:
-```
-python main.py --task train --config configs/sta_train.yml
-```
-You may edit the `.yml` config file as you like.
 
 ## Testing
 Run the following commands after you specify the path to the model weight in the config file:
@@ -47,17 +40,7 @@ python inference.py --img_path [path_to_img_file_or_directory] --model_path [pat
 We provide pretrained weights in the table below:
 | Source | Performance                                   | Weights                                                                                                                                          |
 | ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A      | B: 11.4MAE, 19.7MSE<br>Q: 115.7MAE, 199.8MSE  | [OneDrive](https://hkustconnect-my.sharepoint.com/:u:/g/personal/zpengac_connect_ust_hk/EaWnUPugulxIiP4gK2F_bqcBJwJhru0aWa8JH6l8Dbk5DQ?e=2B0kJP)<br>[Google Drive](https://drive.google.com/file/d/1yHHZZTOaQ9fM56QuDB1HIna4K1p297nG/view?usp=sharing) |
-| B      | A: 99.6MAE, 182.9MSE<br>Q: 165.6MAE, 290.4MSE | [OneDrive](https://hkustconnect-my.sharepoint.com/:u:/g/personal/zpengac_connect_ust_hk/EZp54KXswPVFnXHP2dhIGRABUZYrH4ZXaxBr5y9M7io2Bg?e=DnGP6v)<br>[Google Drive](https://drive.google.com/file/d/1sYGMGNOqj0OUEz-5zE9S1G7hjOzmtJsZ/view?usp=sharing) |
-| Q      | A: 65.5MAE, 110.1MSE<br>B: 12.3MAE, 24.1MSE   | ~~OneDrive~~<br>[Google Drive](https://drive.google.com/file/d/16zqOyKsEevoxSFOCNcUakdIq0dsAns5v/view?usp=sharing) |
+| A      | B: 9.5MAE, 16.1MSE<br>Q: 113.7MAE, 194.8MSE  | [Download](https://github.com/caiyuyu-1/WQCount/releases/download/v1.0/sta_best.pth)|
+| B      | A: 94.1MAE, 179.9MSE<br>Q: 144.8MAE, 256.2MSE | [Download](https://github.com/caiyuyu-1/WQCount/releases/download/v1.0/stb_best.pth)|
+| Q      | A: 64.9MAE, 111.0MSE<br>B: 14.3MAE, 28.7MSE   | [Download]() |
 
-## Citation
-If you find this work helpful in your research, please cite the following:
-```
-@inproceedings{pengMPCount2024,
-  title = {Single Domain Generalization for Crowd Counting},
-  booktitle = {Proceedings of the IEEE/CVF Conference on Computer Vision and Pattern Recognition (CVPR 2024)},
-  author = {Peng, Zhuoxuan and Chan, S.-H. Gary},
-  year = {2024}
-}
-```
