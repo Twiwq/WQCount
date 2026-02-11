@@ -25,7 +25,7 @@ class ConvBlock(nn.Module):
         return y
 
 
-# 上采样操作
+
 def upsample(x, scale_factor=2, mode='bilinear'):
     if mode == 'nearest':
         return F.interpolate(x, scale_factor=scale_factor, mode=mode)
@@ -41,8 +41,6 @@ class DGModel_base(nn.Module):
         self.den_dropout1=den_dropout1
         self.den_dropout2=den_dropout2
         self.den_dropout3=den_dropout3
-
-
 
         vgg = models.vgg16_bn(weights=models.VGG16_BN_Weights.DEFAULT if pretrained else None)
 
@@ -120,7 +118,6 @@ class DGModel_base(nn.Module):
         score2 = (logits_12 + logits_23) / 2
         score3 = (logits_13 + logits_23) / 2
 
-        # 堆叠得分
         scores = torch.cat([score1, score2, score3], dim=1)  # [b, 3, 80, 80]
 
         out_weights = F.softmax(-scores, dim=1)  # [b, 3, 80, 80]
@@ -129,7 +126,7 @@ class DGModel_base(nn.Module):
         inner_weights2 = F.softmax(-(y2 * y3 + y2 * y1), dim=1)
         inner_weights3 = F.softmax(-(y1 * y3 + y3 * y2), dim=1)
 
-        # 应用权重到特征图    b 256 6400 *b  6400 6400
+        #   b 256 6400 *b  6400 6400
         y1_weighted = y1 * out_weights[:, 0:1, :, :] * inner_weights1  # [b, c, h, w]
         y2_weighted = y2 * out_weights[:, 1:2, :, :] * inner_weights2  # [b, c, h, w]
         y3_weighted = y3 * out_weights[:, 2:3, :, :] * inner_weights3  # [b, c, h, w]
@@ -138,15 +135,15 @@ class DGModel_base(nn.Module):
         return y1_weighted, y2_weighted, y3_weighted,self.jsd(y1_weighted,y2_weighted)+self.jsd(y1_weighted,y3_weighted)+self.jsd(y2_weighted, y3_weighted)
 
     def ronghemidut(self, y1, y2, y3):
-        # 将y1, y2, y3堆叠在一起 [b, 3, h, w]
+
         y_cat_origin = torch.cat([y1, y2, y3], dim=1)  # [b, 3, h, w]
 
         y_max = y_cat_origin.max(dim=1, keepdim=True)[0]
-        # 计算每个通道的置信度权重，较大的值将获得较大的权重
-        y_sum = y_cat_origin.sum(dim=1, keepdim=True) + 1e-6  # 避免除零
-        y_conf = y_cat_origin / y_sum  # 计算权重 [b, 3, h, w]
 
-        # 将权重应用到原始特征图上 [b, 3, h, w]
+        y_sum = y_cat_origin.sum(dim=1, keepdim=True) + 1e-6
+        y_conf = y_cat_origin / y_sum
+
+
         y_weighted = y_conf * y_cat_origin
 
         y1_weighted = y_weighted[:, 0:1, :, :]
@@ -159,18 +156,15 @@ class DGModel_base(nn.Module):
     
 
 
-    def forward_fe(self, x):  # 前向传播
-        # 特征提取：
+    def forward_fe(self, x):
+
         x1 = self.enc1(x)
         x2 = self.enc2(x1)
         x3 = self.enc3(x2)
 
-        # 这里就是顶层
-        # x3 = upsample(x3, scale_factor=4)
         y3 = self.dec3(x3)
         y3 = upsample(y3, scale_factor=4)
-        
-        # x2 = upsample(x2, scale_factor=2)
+
         y2 = self.dec2(x2)
         y2 = upsample(y2, scale_factor=2)
         
@@ -184,15 +178,12 @@ class DGModel_base(nn.Module):
 
         b, c, h, w = feature_map.shape
 
-        # 计算每个通道的阈值（在空间维度上）
         avg_pooled = feature_map.mean(dim=(2, 3), keepdim=True)  # [b, c, 1, 1]
 
         max_pooled, _ = torch.max(feature_map, dim=2, keepdim=True)  # [b, c, 1, w]
         max_pooled, _ = torch.max(max_pooled, dim=3, keepdim=True)  # [b, c, 1, 1]
 
-        # 计算阈值
         thresholds = (avg_pooled + max_pooled) / 2  # [b, c, 1, 1]
-
 
         weights = feature_map / (thresholds + 1e-8)
         new = feature_map * weights
@@ -241,7 +232,7 @@ class DGModel_base(nn.Module):
 
 
 
-class DGModel_mem(DGModel_base):  # 在 DGModel_base 的基础上增加了通过记忆库进行特征增强
+class DGModel_mem(DGModel_base):
     def __init__(self, pretrained=True, den_dropout1=0.3,den_dropout2=0.3, den_dropout3=0.3, mem_dim1=128, mem_dim2=128,mem_dim3=128,mem_size1=1024,mem_size2=512,mem_size3=256):
         super().__init__(pretrained,den_dropout1, den_dropout2, den_dropout3)
 
@@ -257,7 +248,6 @@ class DGModel_mem(DGModel_base):  # 在 DGModel_base 的基础上增加了通过
         self.mem2 = nn.Parameter(torch.FloatTensor(1, self.mem_dim2, self.mem_size2).normal_(0.0, 1.0))  # 对应 y2
         self.mem3 = nn.Parameter(torch.FloatTensor(1, self.mem_dim3, self.mem_size3).normal_(0.0, 1.0))  # 对应 y3
 
-        # 最终融合
 
         self.den_dec1 = nn.Sequential(
             ConvBlock(256, self.mem_dim1, kernel_size=1, padding=0, bn=True),
@@ -272,7 +262,6 @@ class DGModel_mem(DGModel_base):  # 在 DGModel_base 的基础上增加了通过
             nn.Dropout2d(p=den_dropout3)
         )
 
-        # 最终生成密度图
         self.den_head1 = nn.Sequential(
             ConvBlock(self.mem_dim1, 1, kernel_size=1, padding=0)
         )
@@ -283,15 +272,15 @@ class DGModel_mem(DGModel_base):  # 在 DGModel_base 的基础上增加了通过
             ConvBlock(self.mem_dim3, 1, kernel_size=1, padding=0),
         )
 
-    def forward_mem(self, y, M):  # 记忆增强模块   记忆库
-        # 初始化
+    def forward_mem(self, y, M):
+
         b, k, h, w = y.shape
-        m = M.repeat(b, 1, 1)  # 这样在后续的批量矩阵乘法（torch.bmm）中，可以与批次中的每个样本进行对应运算。
-        m_key = m.transpose(1, 2)  # 在后续的批量矩阵乘法 torch.bmm(m_key, y_) 中，需要确保张量的维度匹配。
-        y_ = y.view(b, k, -1)  # 展平  80*80变成6400
-        # 计算记忆库与特征图的相似度
+        m = M.repeat(b, 1, 1)
+        m_key = m.transpose(1, 2)
+        y_ = y.view(b, k, -1)
+
         logits = torch.bmm(m_key, y_) / sqrt(k)
-        # 基于相似度进行特征加强
+
         y_new = torch.bmm(m_key.transpose(1, 2), F.softmax(logits, dim=1))
         y_new_ = y_new.view(b, k, h, w)
 
@@ -339,17 +328,16 @@ class DGModel_memadd(DGModel_mem):
 
        
     def jsd1(self, logits1, logits2):
-        p1 = F.softmax(logits1, dim=1)  # logits1、2为未归一化的预测分数
+        p1 = F.softmax(logits1, dim=1)
         p2 = F.softmax(logits2, dim=1)
         jsd = F.mse_loss(p1, p2)
         return jsd
 
     def forward_train(self, img1, img2):
-        # 特征提取
-        y11, y21, y31, x11, x21, x31 = self.forward_fe(img1)  # 获取img1的三个特征层
-        y12, y22, y32, x12, x22, x32 = self.forward_fe(img2)  # 获取img2的三个特征层
 
-        # 实例归一化
+        y11, y21, y31, x11, x21, x31 = self.forward_fe(img1)
+        y12, y22, y32, x12, x22, x32 = self.forward_fe(img2)
+
 
         y1_in1 = F.instance_norm(y11, eps=1e-5)
         y1_in2 = F.instance_norm(y12, eps=1e-5)
@@ -387,8 +375,7 @@ class DGModel_memadd(DGModel_mem):
 
         y3_den_new1= self.den_dec3(y3_den_new1)
         y3_den_new2 = self.den_dec3(y3_den_new2)
-        
-        # 特征加强以及评分
+
         y1_den_new1, logits1_1 = self.forward_mem(y1_den_new1, self.mem1)
         y1_den_new2, logits1_2 = self.forward_mem(y1_den_new2, self.mem1)
 
@@ -397,7 +384,7 @@ class DGModel_memadd(DGModel_mem):
 
         y3_den_new1, logits3_1 = self.forward_mem(y3_den_new1, self.mem3)
         y3_den_new2, logits3_2 = self.forward_mem(y3_den_new2, self.mem3)
-        # 算评分差异
+
         loss_con1 = self.jsd(logits1_1, logits1_2)
         loss_con2 = self.jsd(logits2_1, logits2_2)
         loss_con3 = self.jsd(logits3_1, logits3_2)
@@ -443,7 +430,7 @@ class DGModel_memadd(DGModel_mem):
 
 
 
-class DGModel_cls(DGModel_base):  # 模型的分类部分
+class DGModel_cls(DGModel_base):
     def __init__(self, pretrained=True, den_dropout1=0.3, den_dropout2=0.3, den_dropout3=0.3, cls_dropout1=0.3,cls_dropout2=0.3,cls_dropout3=0.3,cls_thrs1=0.5,cls_thrs2=0.5,cls_thrs3=0.5):
         super().__init__(pretrained, den_dropout1, den_dropout2, den_dropout3)
 
@@ -451,20 +438,20 @@ class DGModel_cls(DGModel_base):  # 模型的分类部分
         self.cls_dropout2 = cls_dropout2
         self.cls_dropout3 = cls_dropout3
     
-        self.cls_thrs1 = cls_thrs1  # 分类阈值，用于将预测概率转换为二值分类标签。
-        self.cls_thrs2 = cls_thrs2  # 分类阈值，用于将预测概率转换为二值分类标签。
-        self.cls_thrs3 = cls_thrs3  # 分类阈值，用于将预测概率转换为二值分类标签。
+        self.cls_thrs1 = cls_thrs1
+        self.cls_thrs2 = cls_thrs2
+        self.cls_thrs3 = cls_thrs3
 
 
         self.cls_head3 = nn.Sequential(
-            ConvBlock(512, 256, bn=True),  # 确保与 y3 的通道数一致
+            ConvBlock(512, 256, bn=True),
             nn.Dropout2d(p=self.cls_dropout3),
             ConvBlock(256, 1, kernel_size=1, padding=0, relu=False),
             nn.Sigmoid()
         )
 
         
-       # 对标签图进行上采样
+
     def transform_cls_map_gt(self, c_gt,scale_factor=4):
         return upsample(c_gt, scale_factor=scale_factor, mode='nearest')
 
@@ -537,7 +524,7 @@ class DGModel_memcls(DGModel_mem):
         self.cls_thrs3 = cls_thrs3
 
         self.cls_head3 = nn.Sequential(
-            ConvBlock(512, 256, bn=True),  # 确保y3_channels与y3的通道数一致
+            ConvBlock(512, 256, bn=True),
             nn.Dropout2d(p=self.cls_dropout3),
             ConvBlock(256, 1, kernel_size=1, padding=0, relu=False),
             nn.Sigmoid()
@@ -545,19 +532,18 @@ class DGModel_memcls(DGModel_mem):
 
 
 
-     # 对标签图进行上采样
     def transform_cls_map_gt(self, c_gt,scale_factor=4):
         return upsample(c_gt, scale_factor=scale_factor, mode='nearest')
 
-    def transform_cls_map_pred(self, c, cls_thrs, scale_factor=4):  # 将模型的预测概率图二值化，并上采样到目标尺寸。
+    def transform_cls_map_pred(self, c, cls_thrs, scale_factor=4):
         c_new = c.clone().detach()
         c_new[c < cls_thrs] = 0
-        c_new[c >= cls_thrs] = 1  # 将预测结果2值化
+        c_new[c >= cls_thrs] = 1
         c_resized = upsample(c_new, scale_factor=scale_factor, mode='nearest')
        
         return c_resized
 
-    def transform_cls_map(self, c, c_gt=None, scale_factor=4, cls_thrs=0.5):  # 根据是否提供 Ground Truth，调用相应的转换方法。
+    def transform_cls_map(self, c, c_gt=None, scale_factor=4, cls_thrs=0.5):
         if c_gt is not None:
             return self. transform_cls_map_gt(c_gt)
         else:

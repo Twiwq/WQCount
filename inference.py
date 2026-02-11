@@ -96,8 +96,8 @@ def main(args):
 
 if __name__ == '__main__':
     parser = ArgumentParser()
-    parser.add_argument('--img_path', type=str, default=r'D:\MPcount\MPCount-main\test\people_small.jpg', help='Path to the image or directory containing images.')
-    parser.add_argument('--model_path', type=str, default=r'D:\MPcount\MPCount-main\logs\sta\best.pth',  help='Path to the model weight.')
+    parser.add_argument('--img_path', type=str, default=r'', help='Path to the image or directory containing images.')
+    parser.add_argument('--model_path', type=str, default=r'',  help='Path to the model weight.')
     parser.add_argument('--save_path', type=str, default='output.txt', help='Path of the text file to save the prediction results.')
     parser.add_argument('--vis_dir', type=str, default='vis', help='Directory to save the visualization results.')
     parser.add_argument('--unit_size', type=int, default=16, help='Unit size for image resizing. Normally set to 16 and no need to change.')
