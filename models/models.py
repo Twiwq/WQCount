@@ -106,7 +106,7 @@ class DGModel_base(nn.Module):
 
 
 
-    def forward_similarity(self, y1, y2, y3):
+    def similarity_attention_mechanism(self, y1, y2, y3):
 
         b, c, h, w = y1.shape
           
@@ -134,7 +134,7 @@ class DGModel_base(nn.Module):
         
         return y1_weighted, y2_weighted, y3_weighted,self.jsd(y1_weighted,y2_weighted)+self.jsd(y1_weighted,y3_weighted)+self.jsd(y2_weighted, y3_weighted)
 
-    def ronghemidut(self, y1, y2, y3):
+    def maximum_density_fusion(self, y1, y2, y3):
 
         y_cat_origin = torch.cat([y1, y2, y3], dim=1)  # [b, 3, h, w]
 
@@ -171,10 +171,10 @@ class DGModel_base(nn.Module):
         y1 = self.dec1(x1)
 
         return y1, y2, y3, x1, x2, x3
-        
+
 
     
-    def compute_attention_weights(self, feature_map):
+    def multiscale_feature_adjustment(self, feature_map):
 
         b, c, h, w = feature_map.shape
 
@@ -193,11 +193,11 @@ class DGModel_base(nn.Module):
     def forward(self, x):
         y1, y2, y3, x11, x21, x31 = self.forward_fe(x)
 
-        y1 = self.compute_attention_weights(y1)
-        y2 = self.compute_attention_weights(y2)
-        y3 = self.compute_attention_weights(y3)
+        y1 = self.multiscale_feature_adjustment(y1)
+        y2 = self.multiscale_feature_adjustment(y2)
+        y3 = self.multiscale_feature_adjustment(y3)
 
-        y1, y2, y3,h = self.forward_similarity(y1, y2, y3)
+        y1, y2, y3,h = self.similarity_attention_mechanism(y1, y2, y3)
 
         y_den1 = self.den_dec1(y1)
         y_den2 = self.den_dec2(y2)
@@ -216,7 +216,7 @@ class DGModel_base(nn.Module):
         d2 = self.den_head2(y_den2_new)
         d3 = self.den_head3(y_den3_new)
 
-        d, d_mean, y1_weighted, y2_weighted, y3_weighted,d1,d2,d3 = self.ronghemidut(d1, d2, d3)
+        d, d_mean, y1_weighted, y2_weighted, y3_weighted,d1,d2,d3 = self.maximum_density_fusion(d1, d2, d3)
 
         d = upsample(d, scale_factor=4)
         
@@ -244,9 +244,9 @@ class DGModel_mem(DGModel_base):
         self.mem_dim3 = mem_dim3
 
         
-        self.mem1 = nn.Parameter(torch.FloatTensor(1, self.mem_dim1, self.mem_size1).normal_(0.0, 1.0))  # 对应 y1
-        self.mem2 = nn.Parameter(torch.FloatTensor(1, self.mem_dim2, self.mem_size2).normal_(0.0, 1.0))  # 对应 y2
-        self.mem3 = nn.Parameter(torch.FloatTensor(1, self.mem_dim3, self.mem_size3).normal_(0.0, 1.0))  # 对应 y3
+        self.mem1 = nn.Parameter(torch.FloatTensor(1, self.mem_dim1, self.mem_size1).normal_(0.0, 1.0))
+        self.mem2 = nn.Parameter(torch.FloatTensor(1, self.mem_dim2, self.mem_size2).normal_(0.0, 1.0))
+        self.mem3 = nn.Parameter(torch.FloatTensor(1, self.mem_dim3, self.mem_size3).normal_(0.0, 1.0))
 
 
         self.den_dec1 = nn.Sequential(
@@ -288,7 +288,7 @@ class DGModel_mem(DGModel_base):
 
     def forward(self, x):
         y1, y2, y3, _, _, _ = self.forward_fe(x)
-        y_den1, y_den2, y_den3 = self.forward_similarity(y1, y2, y3)
+        y_den1, y_den2, y_den3 = self.similarity_attention_mechanism(y1, y2, y3)
 
         y_den1 = self.den_dec1(y_den1)
         y_den2 = self.den_dec2(y_den2)
@@ -305,7 +305,7 @@ class DGModel_mem(DGModel_base):
         y_den3_new, _ = self.forward_mem(y_den3, self.mem3)
         d3 = self.den_head3(y_den3_new)
 
-        d, d_mean, y1_weighted, y2_weighted, y3_weighted = self.ronghemidut(d1, d2, d3)
+        d, d_mean, y1_weighted, y2_weighted, y3_weighted = self.maximum_density_fusion(d1, d2, d3)
 
         d = upsample(d, scale_factor=4)
 
@@ -364,8 +364,8 @@ class DGModel_memadd(DGModel_mem):
         y3_den_masked1 = y31 * e_mask3
         y3_den_masked2 = y32 * e_mask3
 
-        y1_den_new1,  y2_den_new1,  y3_den_new1 = self.forward_similarity(y1_den_masked1, y2_den_masked1, y3_den_masked1)
-        y1_den_new2,  y2_den_new2,  y3_den_new2 = self.forward_similarity(y1_den_masked2, y2_den_masked2, y3_den_masked2)
+        y1_den_new1,  y2_den_new1,  y3_den_new1 = self.similarity_attention_mechanism(y1_den_masked1, y2_den_masked1, y3_den_masked1)
+        y1_den_new2,  y2_den_new2,  y3_den_new2 = self.similarity_attention_mechanism(y1_den_masked2, y2_den_masked2, y3_den_masked2)
 
         y1_den_new1 = self.den_dec1(y1_den_new1)
         y1_den_new2 = self.den_dec1(y1_den_new2)
@@ -401,8 +401,8 @@ class DGModel_memadd(DGModel_mem):
         d3_2 = self.den_head3(y3_den_new2)
 
         
-        d1, d_mean1, y11_weighted, y21_weighted, y31_weighted = self.ronghemidut(d1_1, d2_1, d3_1)
-        d2, d_mean2, y12_weighted, y22_weighted, y32_weighted = self.ronghemidut(d1_2, d2_2, d3_2)
+        d1, d_mean1, y11_weighted, y21_weighted, y31_weighted = self.maximum_density_fusion(d1_1, d2_1, d3_1)
+        d2, d_mean2, y12_weighted, y22_weighted, y32_weighted = self.maximum_density_fusion(d1_2, d2_2, d3_2)
 
         d1 = upsample(d1, scale_factor=4)
         d2 = upsample(d2, scale_factor=4)
@@ -478,11 +478,11 @@ class DGModel_cls(DGModel_base):
         c = self.cls_head3(x31)
         c_resized = self.transform_cls_map(c, c_gt)
         
-        y1 = self.compute_attention_weights(y1)
-        y2 = self.compute_attention_weights(y2)
-        y3 = self.compute_attention_weights(y3)
+        y1 = self.multiscale_feature_adjustment(y1)
+        y2 = self.multiscale_feature_adjustment(y2)
+        y3 = self.multiscale_feature_adjustment(y3)
 
-        y1, y2, y3,h = self.forward_similarity(y1, y2, y3)
+        y1, y2, y3,h = self.similarity_attention_mechanism(y1, y2, y3)
         
         y_den1 = self.den_dec1(y1)
         y_den2 = self.den_dec2(y2)
@@ -493,7 +493,7 @@ class DGModel_cls(DGModel_base):
         d2 = self.den_head2(y_den2)
         d3 = self.den_head3(y_den3)
 
-        d, d_mean, y1_weighted, y2_weighted, y3_weighted = self.ronghemidut(d1, d2, d3)
+        d, d_mean, y1_weighted, y2_weighted, y3_weighted = self.maximum_density_fusion(d1, d2, d3)
         d = upsample(d*c_resized, scale_factor=4)
 
         y1_weighted = upsample(y1_weighted*c_resized, scale_factor=4)
@@ -557,11 +557,11 @@ class DGModel_memcls(DGModel_mem):
         c = self.cls_head3(x31)
         c_resized = self.transform_cls_map(c, c_gt)
         
-        y1 = self.compute_attention_weights(y1)
-        y2 = self.compute_attention_weights(y2)
-        y3 = self.compute_attention_weights(y3)
+        y1 = self.multiscale_feature_adjustment(y1)
+        y2 = self.multiscale_feature_adjustment(y2)
+        y3 = self.multiscale_feature_adjustment(y3)
 
-        y1, y2, y3, h = self.forward_similarity(y1, y2, y3)
+        y1, y2, y3, h = self.similarity_attention_mechanism(y1, y2, y3)
 
         y1_den1 = self.den_dec1(y1)
         y1_den2 = self.den_dec2(y2)
@@ -576,7 +576,7 @@ class DGModel_memcls(DGModel_mem):
         d2 = self.den_head2(y1_den2)
         d3 = self.den_head3(y1_den3)
         
-        d, d_mean, y1_weighted, y2_weighted, y3_weighted,_,_,_ = self.ronghemidut(d1, d2, d3)
+        d, d_mean, y1_weighted, y2_weighted, y3_weighted,_,_,_ = self.maximum_density_fusion(d1, d2, d3)
         d = upsample(d * c_resized, scale_factor=4)
 
         return d, h, d_mean, y1_weighted, y2_weighted, y3_weighted, c
@@ -624,17 +624,17 @@ class DGModel_final(DGModel_memcls):
         e_mask3 = (e_y3 < self.err_thrs3).clone().detach()
 
         
-        y_den_new1_1 = self.compute_attention_weights(y11)
-        y_den_new2_1 = self.compute_attention_weights(y21)
-        y_den_new3_1 = self.compute_attention_weights(y31)
+        y_den_new1_1 = self.multiscale_feature_adjustment(y11)
+        y_den_new2_1 = self.multiscale_feature_adjustment(y21)
+        y_den_new3_1 = self.multiscale_feature_adjustment(y31)
         
-        y_den_new1_2 = self.compute_attention_weights(y12)
-        y_den_new2_2 = self.compute_attention_weights(y22)
-        y_den_new3_2 = self.compute_attention_weights(y32)
+        y_den_new1_2 = self.multiscale_feature_adjustment(y12)
+        y_den_new2_2 = self.multiscale_feature_adjustment(y22)
+        y_den_new3_2 = self.multiscale_feature_adjustment(y32)
 
         
-        y11, y21, y31,h1 = self.forward_similarity(y_den_new1_1, y_den_new2_1, y_den_new3_1)
-        y12, y22, y32,h2 = self.forward_similarity(y_den_new1_2, y_den_new2_2, y_den_new3_2)
+        y11, y21, y31,h1 = self.similarity_attention_mechanism(y_den_new1_1, y_den_new2_1, y_den_new3_1)
+        y12, y22, y32,h2 = self.similarity_attention_mechanism(y_den_new1_2, y_den_new2_2, y_den_new3_2)
 
 
         y1_den_masked1 = self.den_dec1(y11* e_mask1)
@@ -674,8 +674,8 @@ class DGModel_final(DGModel_memcls):
         c_resized = torch.clamp(c_resized_gt + c_err, 0, 1)
         
 
-        dx1,d_mean1,y11_mask, y21_mask, y31_mask,y11_weighted, y21_weighted, y31_weighted = self.ronghemidut(d11, d21, d31)
-        dx2,d_mean2,y12_mask, y22_mask, y32_mask,y12_weighted, y22_weighted, y32_weighted = self.ronghemidut(d12, d22, d32)
+        dx1,d_mean1,y11_mask, y21_mask, y31_mask,y11_weighted, y21_weighted, y31_weighted = self.maximum_density_fusion(d11, d21, d31)
+        dx2,d_mean2,y12_mask, y22_mask, y32_mask,y12_weighted, y22_weighted, y32_weighted = self.maximum_density_fusion(d12, d22, d32)
 
         dx1 = upsample(dx1* c_resized, scale_factor=4) 
         dx2 = upsample(dx2* c_resized, scale_factor=4)

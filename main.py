@@ -111,8 +111,8 @@ def load_config(config_path, task):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--config', type=str, default='configs/sta_train.yml', help='path to config file')
-    parser.add_argument('--task', type=str, default='train', choices=['train', 'test', 'vis'], help='task to perform')
+    parser.add_argument('--config', type=str, default='configs/sta_test_stb.yml', help='path to config file')
+    parser.add_argument('--task', type=str, default='test', choices=['train', 'test', 'vis'], help='task to perform')
     args = parser.parse_args()
 
     init_params, task_params = load_config(args.config, args.task)
