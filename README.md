@@ -1,5 +1,5 @@
-# WQCount
-This is an official repository for our work, "WQCount"
+# WQCount: Single Domain Generalization for Crowd Counting Based on Feature Decoupling
+This is an official repository for our work, "WQCount: Single Domain Generalization for Crowd Counting Based on Feature Decoupling"
 
 ## Requirements
 * Python 3.10.12
