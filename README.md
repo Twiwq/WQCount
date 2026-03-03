@@ -41,6 +41,7 @@ We provide pretrained weights in the table below:
 | Source | Performance                                   | Weights                                                                                                                                          |
 | ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
 | A      | B: 9.5MAE, 16.1MSE<br>Q: 113.7MAE, 194.8MSE  | [Download](https://github.com/caiyuyu-1/WQCount/releases/download/v1.0/sta_best.pth)|
-| B      | A: 94.1MAE, 179.9MSE<br>Q: 144.8MAE, 256.2MSE | [Download](https://github.com/caiyuyu-1/WQCount/releases/download/v1.0/stb_best.pth)|
-| Q      | A: 64.9MAE, 111.0MSE<br>B: 14.3MAE, 28.7MSE   | [Download]() |
+| B      | A: 94.1MAE, 179.9MSE<br>Q: 150.7MAE, 271.3MSE | [Download](https://github.com/caiyuyu-1/WQCount/releases/download/v1.0/stb_best.pth)|
+
+[//]: # (| Q      | A: 64.9MAE, 111.0MSE<br>B: 14.3MAE, 28.7MSE   | [Download]&#40;&#41; |)
 
