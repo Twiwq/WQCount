@@ -40,8 +40,8 @@ python inference.py --img_path [path_to_img_file_or_directory] --model_path [pat
 We provide pretrained weights in the table below:
 | Source | Performance                                   | Weights                                                                                                                                          |
 | ------ | --------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ |
-| A      | B: 9.5MAE, 16.1MSE<br>Q: 113.7MAE, 194.8MSE  | [Download]((https://drive.google.com/file/d/1-px7JTChkHm7OI1rcfs-wesctVHrHxz1/view?usp=sharing))|
-| B      | A: 94.1MAE, 179.9MSE<br>Q: 150.7MAE, 271.3MSE | [Download]((https://drive.google.com/file/d/1hegMnRyI7EepwbwW-5qG7R4mlHtXcNdk/view?usp=sharing))|
+| A      | B: 9.5MAE, 16.1MSE<br>Q: 113.7MAE, 194.8MSE  | [Google Drive](https://drive.google.com/file/d/1-px7JTChkHm7OI1rcfs-wesctVHrHxz1/view?usp=sharing)|
+| B      | A: 94.1MAE, 179.9MSE<br>Q: 150.7MAE, 271.3MSE | [Google Drive](https://drive.google.com/file/d/1hegMnRyI7EepwbwW-5qG7R4mlHtXcNdk/view?usp=sharing)|
 
 [//]: # (| Q      | A: 64.9MAE, 111.0MSE<br>B: 14.3MAE, 28.7MSE   | [Download]&#40;&#41; |)
 
